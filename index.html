@@ -574,7 +574,7 @@
                 <i class="bi bi-exclamation-octagon-fill me-1"></i>Usuario o contraseña incorrectos
             </div>
 
-            <form id="loginForm" autocomplete="off">
+            <form id="loginForm" autocomplete="off" onsubmit="return handleLogin(event)">
                 <div class="mb-3">
                     <label for="loginUserInput" class="form-label small fw-semibold text-secondary mb-1">Usuario</label>
                     <div class="input-group">
@@ -902,6 +902,10 @@
                     <div>
                         <h5 class="modal-title fw-bold mb-0" id="tmSellerName">Vendedor</h5>
                         <div class="small text-muted" id="tmSellerSummary">Resumen</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body pt-2">
                     <!-- Leyenda de colores y acciones rápidas del vendedor -->
                     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
                         <div class="d-flex flex-wrap gap-2 small fw-semibold">
@@ -971,6 +975,129 @@
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         MODAL 2: TICKET DIGITAL COMPARTIBLE (PNG / WHATSAPP)
+         ========================================================= -->
+    <div class="modal fade" id="digitalTicketModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg bg-light">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-ticket-perforated-fill text-primary me-2"></i>Ticket Digital</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="digital-ticket-wrapper">
+                        <div class="digital-ticket" id="printableTicket">
+                            <div class="dt-header">
+                                <div class="dt-church" id="dtOrganizerLine">IGLESIA • IGLESIA EVANGÉLICA CENTRAL</div>
+                                <h2 class="dt-title" id="dtActivityName">CHICHARRONADA PRO-TEMPLO</h2>
+                                <div class="dt-purpose-ribbon" id="dtPurpose">Para: Pro-Construcción del Templo</div>
+                            </div>
+
+                            <div class="dt-perforation"></div>
+
+                            <div class="dt-body">
+                                <div class="dt-number-box">
+                                    <div class="dt-number-label">Ticket Oficial</div>
+                                    <div class="dt-number-value" id="dtTicketNumber">N.º 001</div>
+                                </div>
+
+                                <div class="dt-price-row">
+                                    <div class="text-start">
+                                        <div class="small text-muted fw-semibold">Colaboración</div>
+                                        <div class="dt-price-val" id="dtPrice">S/ 20.00</div>
+                                    </div>
+                                    <span class="badge bg-success rounded-pill px-3 py-2" id="dtStatusBadge">PAGADO</span>
+                                </div>
+
+                                <div class="dt-schedule-grid">
+                                    <div class="dt-schedule-item">
+                                        <div class="dt-schedule-label"><i class="bi bi-calendar-event me-1"></i>Fecha</div>
+                                        <div class="dt-schedule-val" id="dtActivityDate">29 Nov 2026</div>
+                                    </div>
+                                    <div class="dt-schedule-item">
+                                        <div class="dt-schedule-label"><i class="bi bi-clock me-1"></i>Hora de Recojo</div>
+                                        <div class="dt-schedule-val" id="dtPickupTime">12:00 PM</div>
+                                    </div>
+                                </div>
+
+                                <div class="dt-location-box" id="dtLocationBox">
+                                    <i class="bi bi-geo-alt-fill me-1"></i><strong>Lugar:</strong> <span id="dtPickupLocation">Local de la Iglesia</span>
+                                </div>
+
+                                <div class="dt-meta">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="text-muted">Comprador:</span>
+                                        <strong class="text-dark" id="dtBuyerName">Portador</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">Responsable:</span>
+                                        <strong class="text-dark" id="dtSellerName">Vendedor</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="dt-footer">
+                                ¡Muchas gracias por su valiosa colaboración!
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-3">
+                        <button type="button" id="btnShareWhatsapp" class="btn btn-success py-2 fw-bold rounded-3 shadow-sm">
+                            <i class="bi bi-whatsapp me-2"></i>Compartir por WhatsApp
+                        </button>
+                        <button type="button" id="btnDownloadTicketPng" class="btn btn-purple py-2 fw-semibold rounded-3">
+                            <i class="bi bi-download me-2"></i>Descargar Imagen (PNG)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         MODAL 3: REGISTRAR NUEVO VENDEDOR
+         ========================================================= -->
+    <div class="modal fade" id="newSellerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-person-plus-fill text-primary me-2"></i>Nuevo Vendedor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="newSellerForm">
+                    <div class="modal-body pt-0">
+                        <div class="mb-3">
+                            <label for="nsName" class="form-label small fw-semibold mb-1">Nombres y Apellidos *</label>
+                            <input type="text" id="nsName" class="form-control rounded-3" placeholder="Ej. Hno. Carlos Pérez" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nsPhone" class="form-label small fw-semibold mb-1">Celular / WhatsApp (opcional)</label>
+                            <input type="tel" id="nsPhone" class="form-control rounded-3" placeholder="Ej. 942110205">
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label for="nsStart" class="form-label small fw-semibold mb-1">Ticket Inicio *</label>
+                                <input type="number" id="nsStart" class="form-control rounded-3" min="1" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="nsEnd" class="form-label small fw-semibold mb-1">Ticket Final *</label>
+                                <input type="number" id="nsEnd" class="form-control rounded-3" min="1" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-purple rounded-pill px-4 fw-semibold">
+                            Guardar Vendedor
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -1058,6 +1185,56 @@
                             <label for="eaName" class="form-label small fw-semibold mb-1">Nombre de la actividad *</label>
                             <input type="text" id="eaName" class="form-control rounded-3" placeholder="Ej. Gran Chicharronada" required>
                         </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-5">
+                                <label for="eaOrgType" class="form-label small fw-semibold mb-1">Tipo *</label>
+                                <select id="eaOrgType" class="form-select rounded-3">
+                                    <option value="Iglesia">Iglesia</option>
+                                    <option value="Familia">Familia</option>
+                                    <option value="Grupo">Grupo</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
+                            <div class="col-7">
+                                <label for="eaOrgName" class="form-label small fw-semibold mb-1">Quién realiza *</label>
+                                <input type="text" id="eaOrgName" class="form-control rounded-3" placeholder="Ej. Iglesia Central" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="eaPurpose" class="form-label small fw-semibold mb-1">Para qué es (Motivo) *</label>
+                            <input type="text" id="eaPurpose" class="form-control rounded-3" placeholder="Ej. Pro-Construcción del Templo" required>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label for="eaDate" class="form-label small fw-semibold mb-1">Fecha *</label>
+                                <input type="date" id="eaDate" class="form-control rounded-3" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="eaPrice" class="form-label small fw-semibold mb-1">Precio Ticket (S/) *</label>
+                                <input type="number" id="eaPrice" class="form-control rounded-3" step="0.50" min="1" required>
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label for="eaPickupTime" class="form-label small fw-semibold mb-1">Hora de recojo *</label>
+                                <input type="text" id="eaPickupTime" class="form-control rounded-3" placeholder="Ej. 12:00 PM" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="eaPickupLocation" class="form-label small fw-semibold mb-1">Lugar (opcional)</label>
+                                <input type="text" id="eaPickupLocation" class="form-control rounded-3" placeholder="Ej. Local de la Iglesia">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-purple rounded-pill px-4 fw-semibold">
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- =========================================================
          MODAL 6: COPIA DE SEGURIDAD Y RESPALDO DE DATOS
@@ -1146,11 +1323,40 @@
            ========================================================= */
         const STORAGE_KEY = 'gestor_tickets_v2';
         const AUTH_STORAGE_KEY = 'gestor_tickets_auth';
-        const AUTH_USER_HASH = "230-215-245-206-212-263-230-269-230-215-206-215-218-260";
-        const AUTH_PASS_HASH = "278-266-257-230-206-212-263-158-161";
+        const AUTH_USER_ARR = [80, 75, 85, 72, 74, 91, 80, 93, 80, 75, 72, 75, 76, 90];
+        const AUTH_PASS_ARR = [96, 92, 89, 80, 72, 74, 91, 56, 57];
 
-        function codificarCredencial(texto) {
-            return Array.from(texto.trim()).map(c => (c.charCodeAt(0) * 3) + 11).join('-');
+        function checkCred(input, expectedArr) {
+            if (input.length !== expectedArr.length) return false;
+            for (let i = 0; i < input.length; i++) {
+                if (input.charCodeAt(i) + 7 !== expectedArr[i]) return false;
+            }
+            return true;
+        }
+
+        function handleLogin(event) {
+            if (event) event.preventDefault();
+            const userVal = document.getElementById('loginUserInput').value.trim().toUpperCase();
+            const passVal = document.getElementById('loginPassInput').value.trim();
+            const remember = document.getElementById('loginRememberCheck').checked;
+            const errorAlert = document.getElementById('loginErrorAlert');
+
+            if (checkCred(userVal, AUTH_USER_ARR) && checkCred(passVal, AUTH_PASS_ARR)) {
+                errorAlert.classList.add('d-none');
+                if (remember) {
+                    localStorage.setItem(AUTH_STORAGE_KEY, '1');
+                    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+                } else {
+                    sessionStorage.setItem(AUTH_STORAGE_KEY, '1');
+                    localStorage.removeItem(AUTH_STORAGE_KEY);
+                }
+                showAppView();
+                renderAll();
+                showToast('Bienvenido al panel de control');
+            } else {
+                errorAlert.classList.remove('d-none');
+            }
+            return false;
         }
 
         function isAuthenticated() {
@@ -2024,32 +2230,6 @@
                 const isPassword = passInput.type === 'password';
                 passInput.type = isPassword ? 'text' : 'password';
                 icon.className = isPassword ? 'bi bi-eye-slash-fill' : 'bi bi-eye-fill';
-            });
-
-            // Validación de inicio de sesión
-            document.getElementById('loginForm').addEventListener('submit', e => {
-                e.preventDefault();
-                const userVal = document.getElementById('loginUserInput').value;
-                const passVal = document.getElementById('loginPassInput').value;
-                const remember = document.getElementById('loginRememberCheck').checked;
-                const errorAlert = document.getElementById('loginErrorAlert');
-
-                if (codificarCredencial(userVal) === AUTH_USER_HASH &&
-                    codificarCredencial(passVal) === AUTH_PASS_HASH) {
-                    errorAlert.classList.add('d-none');
-                    if (remember) {
-                        localStorage.setItem(AUTH_STORAGE_KEY, '1');
-                        sessionStorage.removeItem(AUTH_STORAGE_KEY);
-                    } else {
-                        sessionStorage.setItem(AUTH_STORAGE_KEY, '1');
-                        localStorage.removeItem(AUTH_STORAGE_KEY);
-                    }
-                    showAppView();
-                    renderAll();
-                    showToast('Bienvenido al panel de control');
-                } else {
-                    errorAlert.classList.remove('d-none');
-                }
             });
 
             // Botón Salir en cabecera
