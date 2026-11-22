@@ -1,0 +1,2167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Metadatos PWA / Móvil para lucir como app nativa al agregar a pantalla de inicio -->
+    <meta name="theme-color" content="#6f2c91">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Tickets App">
+    <title>Control de Actividades y Tickets</title>
+
+    <!-- Fuente moderna Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <style>
+        /* =========================================================
+           VARIABLES DE DISEÑO Y ESTILOS GENERALES (MÓVIL-PRIMERO)
+           ========================================================= */
+        :root {
+            --color-primary-dark: #3b0764;
+            --color-primary: #581c87;
+            --color-primary-accent: #6d28d9;
+            --color-paid: #10b981;
+            --color-paid-bg: #ecfdf5;
+            --color-paid-border: #a7f3d0;
+            --color-pending: #ef4444;
+            --color-pending-bg: #fef2f2;
+            --color-pending-border: #fecaca;
+            --color-avail: #64748b;
+            --color-avail-bg: #f1f5f9;
+            --color-avail-border: #cbd5e1;
+            --bg-app: #f4f6f9;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-app);
+            color: #1e293b;
+            overflow-x: hidden;
+            padding-bottom: 3rem;
+        }
+
+        /* Encabezado superior inspirado en el morado original */
+        .app-header {
+            background: linear-gradient(135deg, #3b0764 0%, #6f2c91 55%, #4c1d95 100%);
+            color: #ffffff;
+            border-bottom-left-radius: 1.5rem;
+            border-bottom-right-radius: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(59, 7, 100, 0.28);
+            padding-bottom: 1.75rem;
+        }
+
+        .activity-select-header {
+            background-color: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-weight: 600;
+            font-size: 0.85rem;
+            border-radius: 999px;
+            padding: 0.35rem 2rem 0.35rem 0.85rem;
+            max-width: 240px;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        }
+
+        .activity-select-header option {
+            color: #1e293b;
+            background-color: #ffffff;
+        }
+
+        .saved-indicator {
+            font-size: 0.72rem;
+            background: rgba(16, 185, 129, 0.22);
+            color: #a7f3d0;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 999px;
+            padding: 0.2rem 0.65rem;
+            font-weight: 600;
+            transition: all 0.25s ease;
+        }
+
+        .saved-indicator.pulse {
+            background: rgba(16, 185, 129, 0.45);
+            color: #ffffff;
+            transform: scale(1.04);
+        }
+
+        .activity-badge {
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            backdrop-filter: blur(6px);
+            border-radius: 999px;
+            padding: 0.35rem 0.85rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #f3e8ff;
+        }
+
+        /* Tarjetas KPI */
+        .kpi-card {
+            background: #ffffff;
+            border: 1px solid rgba(15, 23, 42, 0.06);
+            border-radius: 1rem;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+        }
+
+        .kpi-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .kpi-total .kpi-icon { background: #ede9fe; color: #5b21b6; }
+        .kpi-paid .kpi-icon { background: var(--color-paid-bg); color: var(--color-paid); }
+        .kpi-pending .kpi-icon { background: var(--color-pending-bg); color: var(--color-pending); }
+
+        /* Navegación por pestañas moderna */
+        .custom-nav-pills {
+            background: #ffffff;
+            padding: 0.35rem;
+            border-radius: 1rem;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+            border: 1px solid rgba(15, 23, 42, 0.06);
+        }
+
+        .custom-nav-pills .nav-link {
+            border-radius: 0.75rem;
+            color: #475569;
+            font-weight: 600;
+            padding: 0.65rem 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .custom-nav-pills .nav-link.active {
+            background-color: var(--color-primary);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(88, 28, 135, 0.25);
+        }
+
+        /* Filtros tipo píldora */
+        .filter-pill {
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 0.45rem 1rem;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #475569;
+            transition: all 0.15s ease;
+        }
+
+        .filter-pill.active {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            color: #ffffff;
+        }
+
+        /* Tarjetas de Vendedores */
+        .seller-card {
+            background: #ffffff;
+            border: 1px solid rgba(15, 23, 42, 0.07);
+            border-radius: 1.15rem;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .seller-card:hover {
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+        }
+
+        .badge-paid {
+            background-color: var(--color-paid-bg);
+            color: #047857;
+            border: 1px solid var(--color-paid-border);
+        }
+
+        .badge-pending {
+            background-color: var(--color-pending-bg);
+            color: #b91c1c;
+            border: 1px solid var(--color-pending-border);
+        }
+
+        .badge-avail {
+            background-color: var(--color-avail-bg);
+            color: #475569;
+            border: 1px solid var(--color-avail-border);
+        }
+
+        /* Barra de progreso fina */
+        .progress-slim {
+            height: 8px;
+            border-radius: 999px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        /* Cuadrícula táctil de tickets en Modal */
+        .ticket-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+            gap: 0.65rem;
+        }
+
+        .ticket-btn {
+            position: relative;
+            border-radius: 0.85rem;
+            padding: 0.7rem 0.35rem;
+            font-weight: 700;
+            font-size: 0.92rem;
+            border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+            min-height: 62px;
+        }
+
+        .ticket-btn.status-paid {
+            background-color: var(--color-paid-bg);
+            color: #065f46;
+            border-color: #6ee7b7;
+        }
+
+        .ticket-btn.status-pending {
+            background-color: var(--color-pending-bg);
+            color: #991b1b;
+            border-color: #fca5a5;
+        }
+
+        .ticket-btn.status-available {
+            background-color: var(--color-avail-bg);
+            color: #475569;
+            border-color: #cbd5e1;
+        }
+
+        .ticket-btn.selected {
+            transform: scale(1.06);
+            border-color: var(--color-primary) !important;
+            box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.25);
+            z-index: 2;
+        }
+
+        .ticket-buyer-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: #4f46e5;
+            position: absolute;
+            top: 6px;
+            right: 6px;
+        }
+
+        .ticket-extra-tag {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            opacity: 0.85;
+            margin-top: 2px;
+        }
+
+        /* Panel de acciones del ticket seleccionado */
+        .ticket-action-panel {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1rem;
+        }
+
+        /* =========================================================
+           DISEÑO DEL TICKET DIGITAL COMPARTIBLE (BOLETO FÍSICO)
+           ========================================================= */
+        .digital-ticket-wrapper {
+            display: flex;
+            justify-content: center;
+            padding: 0.5rem;
+        }
+
+        .digital-ticket {
+            width: 100%;
+            max-width: 360px;
+            background: #ffffff;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+            border: 1px solid #e2e8f0;
+            position: relative;
+        }
+
+        .dt-header {
+            background: linear-gradient(135deg, #3b0764 0%, #581c87 60%, #4338ca 100%);
+            color: #ffffff;
+            padding: 1.35rem 1.25rem 1.15rem;
+            text-align: center;
+        }
+
+        .dt-church {
+            font-size: 0.72rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #e9d5ff;
+            font-weight: 700;
+            margin-bottom: 0.35rem;
+        }
+
+        .dt-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .dt-date {
+            font-size: 0.82rem;
+            color: #ddd6fe;
+            margin-top: 0.35rem;
+        }
+
+        .dt-purpose-ribbon {
+            display: inline-block;
+            margin-top: 0.65rem;
+            background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+            color: #3b0764;
+            font-size: 0.74rem;
+            font-weight: 800;
+            padding: 0.32rem 0.85rem;
+            border-radius: 999px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+            letter-spacing: 0.02em;
+        }
+
+        .dt-schedule-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            text-align: left;
+        }
+
+        .dt-schedule-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 0.55rem 0.7rem;
+        }
+
+        .dt-schedule-label {
+            font-size: 0.66rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #64748b;
+            letter-spacing: 0.04em;
+        }
+
+        .dt-schedule-val {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-top: 0.1rem;
+        }
+
+        .dt-location-box {
+            background: #faf5ff;
+            border: 1px solid #e9d5ff;
+            border-radius: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.9rem;
+            text-align: left;
+            font-size: 0.8rem;
+            color: #4c1d95;
+        }
+
+        /* Línea punteada con muescas laterales de boleto */
+        .dt-perforation {
+            position: relative;
+            border-top: 2px dashed #cbd5e1;
+            margin: 0;
+            height: 0;
+        }
+
+        .dt-perforation::before,
+        .dt-perforation::after {
+            content: '';
+            position: absolute;
+            top: -12px;
+            width: 24px;
+            height: 24px;
+            background-color: #f8fafc;
+            border-radius: 50%;
+            border: 1px solid #e2e8f0;
+        }
+
+        .dt-perforation::before { left: -13px; }
+        .dt-perforation::after { right: -13px; }
+
+        .dt-body {
+            padding: 1.35rem 1.25rem;
+            text-align: center;
+            background: #ffffff;
+        }
+
+        .dt-number-box {
+            background: #f5f3ff;
+            border: 2px solid #ddd6fe;
+            border-radius: 1rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .dt-number-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #6d28d9;
+            letter-spacing: 0.08em;
+        }
+
+        .dt-number-value {
+            font-size: 2.35rem;
+            font-weight: 800;
+            color: #3b0764;
+            line-height: 1.1;
+            letter-spacing: 0.04em;
+        }
+
+        .dt-price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            border-radius: 0.85rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .dt-price-val {
+            font-size: 1.55rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .dt-meta {
+            text-align: left;
+            font-size: 0.86rem;
+            color: #475569;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 0.85rem;
+        }
+
+        .dt-footer {
+            background: #f8fafc;
+            padding: 0.75rem 1.25rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        /* Botones personalizados */
+        .btn-purple {
+            background-color: var(--color-primary);
+            border-color: var(--color-primary);
+            color: #ffffff;
+        }
+
+        .btn-purple:hover, .btn-purple:focus {
+            background-color: var(--color-primary-dark);
+            border-color: var(--color-primary-dark);
+            color: #ffffff;
+        }
+
+        .btn-outline-purple {
+            color: var(--color-primary);
+            border-color: #c4b5fd;
+            background: #faf5ff;
+        }
+
+        .btn-outline-purple:hover {
+            background-color: var(--color-primary);
+            border-color: var(--color-primary);
+            color: #ffffff;
+        }
+
+        /* Balance financiero */
+        .balance-card {
+            background: linear-gradient(135deg, #1e1b4b 0%, #3b0764 100%);
+            color: #ffffff;
+            border-radius: 1.25rem;
+            box-shadow: 0 12px 24px rgba(30, 27, 75, 0.22);
+        }
+
+        /* Toast contenedor */
+        .toast-container {
+            z-index: 1090;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- =========================================================
+         ENCABEZADO DE ACTIVIDAD ACTIVA Y KPIs
+         ========================================================= -->
+    <header class="app-header pt-3 px-3">
+        <div class="container-xl">
+            <!-- Barra superior compacta: Selector de actividad, estado guardado y botones -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom border-white border-opacity-15">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <select id="headerActivitySelect" class="form-select form-select-sm activity-select-header" aria-label="Cambiar actividad">
+                        <!-- Opciones generadas dinámicamente -->
+                    </select>
+                    <span class="saved-indicator" id="savedIndicator" title="Todos tus cambios se guardan automáticamente en este dispositivo">
+                        <i class="bi bi-cloud-check-fill me-1"></i>Guardado en dispositivo
+                    </span>
+                </div>
+
+                <div class="d-flex flex-wrap gap-1 gap-sm-2">
+                    <button class="btn btn-warning btn-sm fw-bold rounded-pill px-3 py-1 shadow-sm text-dark" id="btnOpenEditActivity">
+                        <i class="bi bi-pencil-fill me-1"></i>Editar
+                    </button>
+                    <button class="btn btn-light btn-sm fw-semibold rounded-pill px-3 py-1 shadow-sm text-primary" data-bs-toggle="modal" data-bs-target="#newActivityModal">
+                        <i class="bi bi-plus-lg me-1"></i>Nueva
+                    </button>
+                    <button class="btn btn-outline-light btn-sm fw-semibold rounded-pill px-3 py-1" data-bs-toggle="modal" data-bs-target="#backupModal" title="Copia de seguridad y restaurar datos">
+                        <i class="bi bi-shield-check me-1"></i>Respaldo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Información principal de la actividad -->
+            <div class="mb-3">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <span class="activity-badge">
+                        <i class="bi bi-building-fill me-1"></i>
+                        <span id="headerOrganizer">Iglesia • Iglesia Evangélica Central</span>
+                    </span>
+                    <span class="activity-badge">
+                        <i class="bi bi-calendar-event me-1"></i>
+                        <span id="headerActivityDate">29 Nov 2026</span>
+                    </span>
+                    <span class="activity-badge">
+                        <i class="bi bi-clock-fill me-1"></i>
+                        <span id="headerPickupTime">12:00 PM</span>
+                    </span>
+                </div>
+                <h1 class="h4 fw-bold mb-1" id="headerActivityTitle">Chicharronada Pro-Templo — S/ 20.00</h1>
+                <div class="d-flex flex-wrap align-items-center gap-2 small">
+                    <span class="badge bg-warning text-dark rounded-pill px-2 py-1 fw-bold" id="headerPurpose">
+                        Para: Pro-Construcción del Templo
+                    </span>
+                    <span id="headerLocationWrap" class="text-white-75">
+                        <i class="bi bi-geo-alt-fill me-1"></i><span id="headerLocation">Local de la Iglesia</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- 3 Tarjetas KPI en tiempo real -->
+            <div class="row g-2 g-md-3 mt-1">
+                <!-- Total Vendidos -->
+                <div class="col-12 col-sm-4">
+                    <div class="kpi-card kpi-total p-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="kpi-icon">
+                                <i class="bi bi-ticket-perforated-fill"></i>
+                            </div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="text-muted small fw-semibold">Total Vendidos</div>
+                                <div class="h5 fw-extrabold mb-0 text-dark" id="kpiTotalAmount">S/ 0.00</div>
+                                <div class="small text-secondary fw-medium" id="kpiTotalCount">0 tickets</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recaudado / Pagados -->
+                <div class="col-6 col-sm-4">
+                    <div class="kpi-card kpi-paid p-3">
+                        <div class="d-flex align-items-center gap-2 gap-md-3">
+                            <div class="kpi-icon">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="text-muted small fw-semibold text-truncate">Recaudado</div>
+                                <div class="h5 fw-bold mb-0 text-success" id="kpiPaidAmount">S/ 0.00</div>
+                                <div class="small text-success fw-medium" id="kpiPaidCount">0 pagados</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Por Cobrar -->
+                <div class="col-6 col-sm-4">
+                    <div class="kpi-card kpi-pending p-3">
+                        <div class="d-flex align-items-center gap-2 gap-md-3">
+                            <div class="kpi-icon">
+                                <i class="bi bi-exclamation-circle-fill"></i>
+                            </div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="text-muted small fw-semibold text-truncate">Por Cobrar</div>
+                                <div class="h5 fw-bold mb-0 text-danger" id="kpiPendingAmount">S/ 0.00</div>
+                                <div class="small text-danger fw-medium" id="kpiPendingCount">0 pendientes</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- =========================================================
+         CONTENIDO PRINCIPAL Y PESTAÑAS
+         ========================================================= -->
+    <main class="container-xl mt-3 px-3">
+        <!-- Navegación por Tabs -->
+        <ul class="nav nav-pills nav-fill custom-nav-pills mb-3" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-sellers-btn" data-bs-toggle="pill" data-bs-target="#tab-sellers" type="button" role="tab">
+                    <i class="bi bi-people-fill me-1"></i> Vendedores y Tickets
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-finances-btn" data-bs-toggle="pill" data-bs-target="#tab-finances" type="button" role="tab">
+                    <i class="bi bi-cash-coin me-1"></i> Gastos y Balance
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="mainTabsContent">
+            <!-- =====================================================
+                 PESTAÑA 1: VENDEDORES Y TICKETS
+                 ===================================================== -->
+            <div class="tab-pane fade show active" id="tab-sellers" role="tabpanel">
+                <!-- Barra de herramientas: Búsqueda, Filtros y Acciones -->
+                <div class="card border-0 shadow-sm rounded-4 mb-3">
+                    <div class="card-body p-3">
+                        <div class="row g-2 align-items-center">
+                            <!-- Buscador -->
+                            <div class="col-12 col-md-5">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0 rounded-start-pill ps-3">
+                                        <i class="bi bi-search text-muted"></i>
+                                    </span>
+                                    <input type="text" id="searchSellerInput" class="form-control bg-light border-start-0 rounded-end-pill py-2" placeholder="Buscar vendedor o N.º de ticket (ej. 25)...">
+                                </div>
+                            </div>
+
+                            <!-- Filtros rápidos -->
+                            <div class="col-12 col-md-4 d-flex gap-2 flex-wrap">
+                                <button type="button" class="filter-pill active" data-filter="all">Todos</button>
+                                <button type="button" class="filter-pill" data-filter="pending">Por cobrar</button>
+                                <button type="button" class="filter-pill" data-filter="paid">Al día</button>
+                            </div>
+
+                            <!-- Acciones principales -->
+                            <div class="col-12 col-md-3 d-flex gap-2 justify-content-md-end mt-2 mt-md-0">
+                                <button type="button" class="btn btn-purple btn-sm fw-semibold rounded-pill px-3 py-2 flex-grow-1 flex-md-grow-0" data-bs-toggle="modal" data-bs-target="#newSellerModal">
+                                    <i class="bi bi-person-plus-fill me-1"></i> Nuevo Vendedor
+                                </button>
+                                <button type="button" id="btnExportCsv" class="btn btn-outline-success btn-sm fw-semibold rounded-pill px-3 py-2" title="Descargar resumen en Excel (CSV)">
+                                    <i class="bi bi-file-earmark-excel-fill me-1"></i> CSV
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contador de resultados -->
+                <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                    <span class="small text-muted fw-medium" id="sellerListCount">Mostrando 0 vendedores</span>
+                    <span class="small text-muted">Toca <strong>Ver Tickets</strong> para cobrar o compartir</span>
+                </div>
+
+                <!-- Lista de tarjetas de vendedores -->
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3" id="sellersContainer">
+                    <!-- Renderizado dinámicamente por JS -->
+                </div>
+            </div>
+
+            <!-- =====================================================
+                 PESTAÑA 2: GASTOS Y BALANCE
+                 ===================================================== -->
+            <div class="tab-pane fade" id="tab-finances" role="tabpanel">
+                <div class="row g-3">
+                    <!-- Tarjeta de Balance Final -->
+                    <div class="col-12 col-lg-5 order-lg-2">
+                        <div class="balance-card p-4 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h2 class="h5 fw-bold mb-0"><i class="bi bi-graph-up-arrow me-2"></i>Balance Financiero</h2>
+                                <span class="badge bg-white bg-opacity-25 rounded-pill px-3 py-1">En tiempo real</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-white border-opacity-15">
+                                <span class="text-white-75">Total Recaudado (Pagados)</span>
+                                <span class="fw-bold text-success-emphasis bg-success-subtle px-2 py-1 rounded-3" id="balPaidIncome">S/ 0.00</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-white border-opacity-15">
+                                <span class="text-white-75">Total Por Cobrar (Pendientes)</span>
+                                <span class="fw-bold text-warning-emphasis bg-warning-subtle px-2 py-1 rounded-3" id="balPendingIncome">S/ 0.00</span>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-white border-opacity-15">
+                                <span class="text-white-75">Total Gastos Registrados</span>
+                                <span class="fw-bold text-danger-emphasis bg-danger-subtle px-2 py-1 rounded-3" id="balTotalExpenses">- S/ 0.00</span>
+                            </div>
+
+                            <div class="mt-3 p-3 rounded-4 bg-white bg-opacity-10 border border-white border-opacity-15">
+                                <div class="small text-white-50 text-uppercase fw-semibold">Ganancia Neta Real</div>
+                                <div class="display-6 fw-bold mb-0" id="balNetProfit">S/ 0.00</div>
+                                <div class="small text-white-75 mt-1">Recaudado menos gastos (dinero real en caja)</div>
+                            </div>
+
+                            <div class="mt-3 p-3 rounded-4 bg-black bg-opacity-25">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="small text-warning fw-semibold">
+                                            <i class="bi bi-stars me-1"></i>Ganancia Proyectada
+                                        </div>
+                                        <div class="small text-white-50">Total vendido menos gastos (<span id="balPendingRef">S/ 0.00</span> por cobrar)</div>
+                                    </div>
+                                    <div class="h4 fw-bold text-warning mb-0" id="balProjectedProfit">S/ 0.00</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario y Lista de Gastos -->
+                    <div class="col-12 col-lg-7 order-lg-1">
+                        <div class="card border-0 shadow-sm rounded-4 mb-3">
+                            <div class="card-body p-3 p-md-4">
+                                <h3 class="h6 fw-bold mb-3"><i class="bi bi-plus-circle-fill text-primary me-2"></i>Registrar Nuevo Gasto</h3>
+                                <form id="expenseForm" class="row g-2">
+                                    <div class="col-12 col-sm-5">
+                                        <label for="expenseDesc" class="form-label small fw-semibold text-muted mb-1">Descripción del gasto</label>
+                                        <input type="text" id="expenseDesc" class="form-control rounded-3" placeholder="Ej. Compra de carne o carbón" required>
+                                    </div>
+                                    <div class="col-6 col-sm-3">
+                                        <label for="expenseAmount" class="form-label small fw-semibold text-muted mb-1">Monto (S/)</label>
+                                        <input type="number" id="expenseAmount" class="form-control rounded-3" placeholder="0.00" step="0.10" min="0.10" required>
+                                    </div>
+                                    <div class="col-6 col-sm-2">
+                                        <label for="expenseDate" class="form-label small fw-semibold text-muted mb-1">Fecha</label>
+                                        <input type="date" id="expenseDate" class="form-control rounded-3 px-2" required>
+                                    </div>
+                                    <div class="col-12 col-sm-2 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-purple w-100 rounded-3 fw-semibold py-2">
+                                            Agregar
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm rounded-4">
+                            <div class="card-header bg-white border-bottom-0 pt-3 px-3 px-md-4 d-flex justify-content-between align-items-center">
+                                <h3 class="h6 fw-bold mb-0"><i class="bi bi-receipt-cutoff text-danger me-2"></i>Detalle de Gastos</h3>
+                                <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2 fw-bold" id="expensesCountBadge">0 gastos</span>
+                            </div>
+                            <div class="card-body p-3 p-md-4 pt-2">
+                                <div class="list-group list-group-flush" id="expensesList">
+                                    <!-- Renderizado dinámicamente -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- =========================================================
+         MODAL 1: CUADRÍCULA INTERACTIVA DE TICKETS ("VER TICKETS")
+         ========================================================= -->
+    <div class="modal fade" id="ticketsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0 pb-2" style="background: #f8fafc;">
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0" id="tmSellerName">Vendedor</h5>
+                        <div class="small text-muted" id="tmSellerSummary">Resumen</div>
+                    <!-- Leyenda de colores y acciones rápidas del vendedor -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
+                        <div class="d-flex flex-wrap gap-2 small fw-semibold">
+                            <span class="badge badge-paid rounded-pill px-2 py-1"><i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>Pagado</span>
+                            <span class="badge badge-pending rounded-pill px-2 py-1"><i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>Pendiente</span>
+                            <span class="badge badge-avail rounded-pill px-2 py-1"><i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>Disponible</span>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" id="btnModalAddExtra" class="btn btn-outline-purple btn-sm rounded-pill fw-semibold px-3">
+                                <i class="bi bi-plus-lg me-1"></i>Asignar extra
+                            </button>
+                            <button type="button" id="btnMarkAllPaid" class="btn btn-success btn-sm rounded-pill fw-semibold px-3">
+                                <i class="bi bi-check2-all me-1"></i>Liquidar pendientes
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Cuadrícula de botones de tickets -->
+                    <div class="ticket-grid mb-3" id="tmTicketGrid">
+                        <!-- Generado por JS -->
+                    </div>
+
+                    <!-- Panel de acciones para el ticket seleccionado -->
+                    <div class="ticket-action-panel" id="tmActionPanel">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-dark">
+                                <i class="bi bi-ticket-detailed-fill text-primary me-1"></i>
+                                Ticket seleccionado: <span id="selectedTicketLabel" class="text-primary">#001</span>
+                            </span>
+                            <span class="badge rounded-pill" id="selectedTicketStatusBadge">Pagado</span>
+                        </div>
+
+                        <!-- Cambio de estado en 1 toque -->
+                        <div class="btn-group w-100 mb-3" role="group" aria-label="Cambiar estado de ticket">
+                            <button type="button" class="btn btn-outline-success fw-semibold py-2" id="btnSetPaid">
+                                <i class="bi bi-check-circle me-1"></i> Pagado
+                            </button>
+                            <button type="button" class="btn btn-outline-danger fw-semibold py-2" id="btnSetPending">
+                                <i class="bi bi-clock-history me-1"></i> Pendiente
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary fw-semibold py-2" id="btnSetAvailable">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Disponible
+                            </button>
+                        </div>
+
+                        <!-- Comprador y Botón de Ticket Imagen -->
+                        <div class="row g-2 align-items-end">
+                            <div class="col-12 col-sm-7">
+                                <label for="ticketBuyerInput" class="form-label small fw-semibold text-muted mb-1">Nombre del comprador (opcional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="bi bi-person"></i></span>
+                                    <input type="text" id="ticketBuyerInput" class="form-control" placeholder="Ej. Hno. Juan Pérez">
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm-5">
+                                <button type="button" id="btnOpenDigitalTicket" class="btn btn-purple w-100 fw-semibold py-2 rounded-3 shadow-sm">
+                                    <i class="bi bi-image me-1"></i> Ver / Compartir Ticket
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Zona inferior: Eliminar vendedor -->
+                    <div class="mt-3 pt-2 border-top d-flex justify-content-end">
+                        <button type="button" id="btnRequestDeleteSeller" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                            <i class="bi bi-trash3 me-1"></i>Eliminar vendedor
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         MODAL 4: CREAR NUEVA ACTIVIDAD
+         ========================================================= -->
+    <div class="modal fade" id="newActivityModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle-fill text-primary me-2"></i>Nueva Actividad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="newActivityForm">
+                    <div class="modal-body pt-0">
+                        <div class="mb-2">
+                            <label for="naName" class="form-label small fw-semibold mb-1">Nombre de la actividad *</label>
+                            <input type="text" id="naName" class="form-control rounded-3" placeholder="Ej. Gran Parrillada" required>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-5">
+                                <label for="naOrgType" class="form-label small fw-semibold mb-1">Tipo *</label>
+                                <select id="naOrgType" class="form-select rounded-3">
+                                    <option value="Iglesia">Iglesia</option>
+                                    <option value="Familia">Familia</option>
+                                    <option value="Grupo">Grupo</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
+                            <div class="col-7">
+                                <label for="naOrgName" class="form-label small fw-semibold mb-1">Quién realiza *</label>
+                                <input type="text" id="naOrgName" class="form-control rounded-3" placeholder="Ej. Familia Fernández" required>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label for="naPurpose" class="form-label small fw-semibold mb-1">Para qué es (Motivo) *</label>
+                            <input type="text" id="naPurpose" class="form-control rounded-3" placeholder="Ej. Pro-Construcción del Templo" required>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label for="naDate" class="form-label small fw-semibold mb-1">Fecha *</label>
+                                <input type="date" id="naDate" class="form-control rounded-3" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="naPrice" class="form-label small fw-semibold mb-1">Precio Ticket (S/) *</label>
+                                <input type="number" id="naPrice" class="form-control rounded-3" step="0.50" min="1" value="20" required>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label for="naPickupTime" class="form-label small fw-semibold mb-1">Hora de recojo *</label>
+                                <input type="text" id="naPickupTime" class="form-control rounded-3" placeholder="Ej. 12:00 PM" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="naPickupLocation" class="form-label small fw-semibold mb-1">Lugar (opcional)</label>
+                                <input type="text" id="naPickupLocation" class="form-control rounded-3" placeholder="Ej. Local de la Iglesia">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-purple rounded-pill px-4 fw-semibold">
+                            Crear y Activar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         MODAL 5: EDITAR DATOS DE LA ACTIVIDAD ACTIVA
+         ========================================================= -->
+    <div class="modal fade" id="editActivityModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-primary me-2"></i>Editar Datos de la Actividad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="editActivityForm">
+                    <div class="modal-body pt-0">
+                        <div class="mb-3">
+                            <label for="eaName" class="form-label small fw-semibold mb-1">Nombre de la actividad *</label>
+                            <input type="text" id="eaName" class="form-control rounded-3" placeholder="Ej. Gran Chicharronada" required>
+                        </div>
+
+    <!-- =========================================================
+         MODAL 6: COPIA DE SEGURIDAD Y RESPALDO DE DATOS
+         ========================================================= -->
+    <div class="modal fade" id="backupModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-shield-lock-fill text-primary me-2"></i>Copia de Seguridad y Datos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body pt-0">
+                    <div class="alert alert-success border-0 rounded-4 small mb-3 d-flex align-items-start gap-2">
+                        <i class="bi bi-phone-fill fs-5 text-success mt-1"></i>
+                        <div>
+                            <strong>Guardado automático activo:</strong> Todos tus tickets, vendedores y gastos se guardan al instante en la memoria de este celular, incluso sin internet.
+                            <div class="text-muted mt-1">Te recomendamos descargar un respaldo al final del día y enviártelo a tu WhatsApp o Google Drive.</div>
+                        </div>
+                    </div>
+
+                    <!-- Descargar JSON -->
+                    <div class="d-grid gap-2 mb-3">
+                        <button type="button" id="btnDownloadBackup" class="btn btn-purple py-2 fw-semibold rounded-3">
+                            <i class="bi bi-download me-2"></i>Descargar Copia de Seguridad (.json)
+                        </button>
+                    </div>
+
+                    <!-- Restaurar JSON -->
+                    <div class="p-3 bg-light rounded-4 border mb-3">
+                        <label for="backupFileInput" class="form-label small fw-bold text-dark mb-1">
+                            <i class="bi bi-upload me-1 text-primary"></i>Restaurar desde Archivo (.json)
+                        </label>
+                        <input type="file" id="backupFileInput" accept=".json,application/json" class="form-control form-control-sm rounded-3">
+                        <div class="form-text small">Selecciona un archivo de respaldo previo para recuperar todas tus actividades y tickets.</div>
+                    </div>
+
+                    <!-- Restablecer datos de ejemplo -->
+                    <div class="border-top pt-3 d-flex justify-content-between align-items-center">
+                        <span class="small text-muted">¿Quieres limpiar y empezar de nuevo?</span>
+                        <button type="button" id="btnRequestResetDemo" class="btn btn-outline-danger btn-sm rounded-pill fw-semibold px-3">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Restablecer ejemplo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         MODAL 7: CONFIRMACIÓN PERSONALIZADA (SIN USAR confirm())
+         ========================================================= -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-body p-4 text-center">
+                    <div class="mb-2 text-danger fs-1"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                    <h5 class="fw-bold mb-2" id="confirmModalTitle">Confirmar acción</h5>
+                    <p class="small text-muted mb-4" id="confirmModalMessage">¿Estás seguro de continuar?</p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-light rounded-pill px-3 fw-semibold flex-grow-1" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" id="btnConfirmAction" class="btn btn-danger rounded-pill px-3 fw-semibold flex-grow-1">Sí, continuar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor de notificaciones Toast (sin usar alert) -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="appToast" class="toast align-items-center text-bg-dark border-0 rounded-4 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body fw-medium" id="appToastMessage">Acción completada</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5.3 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- html2canvas para convertir el ticket digital en imagen PNG -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+    <script>
+        /* =========================================================
+           PERSISTENCIA EN localStorage Y DATOS INICIALES
+           ========================================================= */
+        const STORAGE_KEY = 'gestor_tickets_v2';
+
+        /**
+         * Genera una lista de tickets para un vendedor según su rango base,
+         * extras y distribución de estados (pagados, pendientes, disponibles).
+         */
+        function buildSellerTickets(start, end, extraNums, paidCount, pendingCount) {
+            const tickets = [];
+            const allNums = [];
+            for (let n = start; n <= end; n++) {
+                allNums.push({ num: n, isExtra: false });
+            }
+            extraNums.forEach(n => allNums.push({ num: n, isExtra: true }));
+
+            allNums.forEach((item, idx) => {
+                let status = 'available';
+                if (idx < paidCount) {
+                    status = 'paid';
+                } else if (idx < paidCount + pendingCount) {
+                    status = 'pending';
+                }
+                tickets.push({
+                    number: item.num,
+                    status: status, // 'paid' | 'pending' | 'available'
+                    buyer: '',
+                    isExtra: item.isExtra
+                });
+            });
+            return tickets;
+        }
+
+        /**
+         * Devuelve el estado inicial de ejemplo (solo se usa la primera vez
+         * o si el usuario elige restablecer los datos de ejemplo).
+         */
+        function getDefaultData() {
+            return {
+                activeActivityId: 1,
+                activities: [
+                    {
+                        id: 1,
+                        name: 'Chicharronada Pro-Templo',
+                        organizerType: 'Iglesia',
+                        organizerName: 'Iglesia Evangélica Central',
+                        purpose: 'Pro-Construcción del Templo',
+                        date: '2026-11-29',
+                        pickupTime: '12:00 PM',
+                        pickupLocation: 'Local de la Iglesia',
+                        price: 20.00,
+                        nextExtraNumber: 75,
+                        sellers: [
+                            {
+                                id: 1, name: 'Nelly Flores Gonzales', phone: '942110201',
+                                rangeStart: 1, rangeEnd: 10,
+                                tickets: buildSellerTickets(1, 10, [], 4, 1)
+                            },
+                            {
+                                id: 2, name: 'William', phone: '942110202',
+                                rangeStart: 11, rangeEnd: 20,
+                                tickets: buildSellerTickets(11, 20, [], 10, 0)
+                            },
+                            {
+                                id: 3, name: 'Emelina Campos M', phone: '942110203',
+                                rangeStart: 21, rangeEnd: 30,
+                                tickets: buildSellerTickets(21, 30, [71, 72, 73, 74], 14, 0)
+                            },
+                            {
+                                id: 4, name: 'Betty Pinedo Barrera', phone: '942110204',
+                                rangeStart: 31, rangeEnd: 40,
+                                tickets: buildSellerTickets(31, 40, [], 7, 3)
+                            },
+                            {
+                                id: 5, name: 'Wilmer Fernández Benavides', phone: '942110207',
+                                rangeStart: 61, rangeEnd: 70,
+                                tickets: buildSellerTickets(61, 70, [], 3, 2)
+                            }
+                        ],
+                        expenses: [
+                            { id: 1, description: 'Compra de carne de cerdo', amount: 450.00, date: '2026-11-22' },
+                            { id: 2, description: 'Envases y cubiertos', amount: 65.00, date: '2026-11-22' }
+                        ]
+                    }
+                ]
+            };
+        }
+
+        // Estado en memoria (hidratado desde localStorage)
+        const appState = {
+            activeActivityId: 1,
+            filter: 'all', // 'all' | 'pending' | 'paid'
+            searchQuery: '',
+            selectedSellerId: null,
+            selectedTicketNumber: null,
+            activities: []
+        };
+
+        let pendingConfirmCallback = null;
+
+        /**
+         * Carga los datos desde localStorage; si está vacío o corrupto, usa datos de ejemplo.
+         */
+        function loadStateFromStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && Array.isArray(parsed.activities) && parsed.activities.length > 0) {
+                        appState.activities = parsed.activities;
+                        const exists = parsed.activities.some(a => a.id === parsed.activeActivityId);
+                        appState.activeActivityId = exists ? parsed.activeActivityId : parsed.activities[0].id;
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn('No se pudo leer localStorage, cargando datos iniciales:', e);
+            }
+            const defaults = getDefaultData();
+            appState.activities = defaults.activities;
+            appState.activeActivityId = defaults.activeActivityId;
+            saveStateToStorage(false);
+        }
+
+        /**
+         * Guarda automáticamente todo el estado en localStorage y muestra el indicador visual.
+         */
+        function saveStateToStorage(pulseIndicator = true) {
+            try {
+                const payload = {
+                    version: 2,
+                    savedAt: new Date().toISOString(),
+                    activeActivityId: appState.activeActivityId,
+                    activities: appState.activities
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+                if (pulseIndicator) {
+                    const ind = document.getElementById('savedIndicator');
+                    if (ind) {
+                        ind.classList.add('pulse');
+                        ind.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Guardado';
+                        clearTimeout(window._savePulseTimer);
+                        window._savePulseTimer = setTimeout(() => {
+                            ind.classList.remove('pulse');
+                            ind.innerHTML = '<i class="bi bi-cloud-check-fill me-1"></i>Guardado en dispositivo';
+                        }, 1300);
+                    }
+                }
+            } catch (e) {
+                console.error('Error al guardar en localStorage:', e);
+                showToast('Aviso: No se pudo guardar en la memoria del dispositivo');
+            }
+        }
+
+        // Instancias de Modales y Toast de Bootstrap
+        let ticketsModalInstance, digitalTicketModalInstance, newSellerModalInstance,
+            newActivityModalInstance, editActivityModalInstance, backupModalInstance,
+            confirmModalInstance, appToastInstance;
+
+        /* =========================================================
+           FUNCIONES UTILITARIAS
+           ========================================================= */
+        function getActiveActivity() {
+            return appState.activities.find(a => a.id === appState.activeActivityId) || appState.activities[0];
+        }
+
+        function formatMoney(amount) {
+            return 'S/ ' + Number(amount).toLocaleString('es-PE', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function padTicket(num) {
+            return String(num).padStart(3, '0');
+        }
+
+        function getTodayIso() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function formatDateHuman(isoDate) {
+            if (!isoDate) return '';
+            const parts = isoDate.split('-');
+            if (parts.length !== 3) return isoDate;
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            const mIndex = parseInt(parts[1], 10) - 1;
+            return `${parts[2]} ${months[mIndex] || parts[1]} ${parts[0]}`;
+        }
+
+        function showToast(message) {
+            document.getElementById('appToastMessage').textContent = message;
+            appToastInstance.show();
+        }
+
+        function askConfirmation(title, message, onConfirm) {
+            document.getElementById('confirmModalTitle').textContent = title;
+            document.getElementById('confirmModalMessage').textContent = message;
+            pendingConfirmCallback = onConfirm;
+            confirmModalInstance.show();
+        }
+
+        function getSellerStats(seller, price) {
+            let paid = 0, pending = 0, available = 0, extras = 0;
+            seller.tickets.forEach(t => {
+                if (t.status === 'paid') paid++;
+                else if (t.status === 'pending') pending++;
+                else available++;
+                if (t.isExtra) extras++;
+            });
+            const sold = paid + pending;
+            return {
+                paid,
+                pending,
+                available,
+                sold,
+                extras,
+                totalAssigned: seller.tickets.length,
+                soldAmount: sold * price,
+                paidAmount: paid * price,
+                pendingAmount: pending * price
+            };
+        }
+
+        /* =========================================================
+           RENDERIZADO GENERAL DEL DASHBOARD
+           ========================================================= */
+        function renderAll() {
+            renderHeaderAndKPIs();
+            renderSellersList();
+            renderFinances();
+        }
+
+        function renderHeaderAndKPIs() {
+            const act = getActiveActivity();
+
+            // Selector desplegable de actividades en cabecera
+            const selectEl = document.getElementById('headerActivitySelect');
+            selectEl.innerHTML = appState.activities.map(a =>
+                `<option value="${a.id}" ${a.id === act.id ? 'selected' : ''}>${a.name} (${formatMoney(a.price)})</option>`
+            ).join('');
+
+            document.getElementById('headerActivityTitle').textContent = `${act.name} — ${formatMoney(act.price)}`;
+            document.getElementById('headerOrganizer').textContent = `${act.organizerType} • ${act.organizerName}`;
+            document.getElementById('headerActivityDate').textContent = formatDateHuman(act.date);
+            document.getElementById('headerPickupTime').textContent = act.pickupTime || 'Por definir';
+            document.getElementById('headerPurpose').textContent = `Para: ${act.purpose || 'Actividad Pro-Fondos'}`;
+
+            const locWrap = document.getElementById('headerLocationWrap');
+            if (act.pickupLocation && act.pickupLocation.trim() !== '') {
+                locWrap.classList.remove('d-none');
+                document.getElementById('headerLocation').textContent = act.pickupLocation;
+            } else {
+                locWrap.classList.add('d-none');
+            }
+
+            let totalPaid = 0;
+            let totalPending = 0;
+
+            act.sellers.forEach(seller => {
+                seller.tickets.forEach(t => {
+                    if (t.status === 'paid') totalPaid++;
+                    else if (t.status === 'pending') totalPending++;
+                });
+            });
+
+            const totalSold = totalPaid + totalPending;
+
+            document.getElementById('kpiTotalAmount').textContent = formatMoney(totalSold * act.price);
+            document.getElementById('kpiTotalCount').textContent = `${totalSold} tickets vendidos`;
+
+            document.getElementById('kpiPaidAmount').textContent = formatMoney(totalPaid * act.price);
+            document.getElementById('kpiPaidCount').textContent = `${totalPaid} pagados`;
+
+            document.getElementById('kpiPendingAmount').textContent = formatMoney(totalPending * act.price);
+            document.getElementById('kpiPendingCount').textContent = `${totalPending} pendientes`;
+        }
+
+        function renderSellersList() {
+            const act = getActiveActivity();
+            const container = document.getElementById('sellersContainer');
+            const rawQuery = appState.searchQuery.trim().toLowerCase();
+            const cleanNumQuery = rawQuery.replace(/^#/, '');
+
+            const filtered = act.sellers.filter(seller => {
+                const stats = getSellerStats(seller, act.price);
+                let matchesSearch = true;
+
+                if (rawQuery !== '') {
+                    const matchName = seller.name.toLowerCase().includes(rawQuery);
+                    const matchTicket = seller.tickets.some(t =>
+                        String(t.number) === cleanNumQuery ||
+                        padTicket(t.number).includes(cleanNumQuery) ||
+                        (t.buyer && t.buyer.toLowerCase().includes(rawQuery))
+                    );
+                    matchesSearch = matchName || matchTicket;
+                }
+
+                if (!matchesSearch) return false;
+                if (appState.filter === 'pending') return stats.pending > 0;
+                if (appState.filter === 'paid') return stats.pending === 0 && stats.sold > 0;
+                return true;
+            });
+
+            document.getElementById('sellerListCount').textContent =
+                `Mostrando ${filtered.length} de ${act.sellers.length} vendedores`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="text-center py-5 bg-white rounded-4 shadow-sm border">
+                            <i class="bi bi-search fs-1 text-muted opacity-50"></i>
+                            <p class="mt-2 mb-0 fw-semibold text-secondary">No se encontraron vendedores o tickets con ese criterio.</p>
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(seller => {
+                const stats = getSellerStats(seller, act.price);
+                const pctPaid = stats.sold > 0 ? Math.round((stats.paid / stats.sold) * 100) : 0;
+                const pctPending = stats.sold > 0 ? 100 - pctPaid : 0;
+                const extraBadge = stats.extras > 0
+                    ? `<span class="badge bg-primary-subtle text-primary rounded-pill ms-1">+${stats.extras} extra${stats.extras > 1 ? 's' : ''}</span>`
+                    : '';
+                const phoneLine = seller.phone && seller.phone.trim() !== ''
+                    ? `<div class="small text-muted"><i class="bi bi-whatsapp text-success me-1"></i>${seller.phone}</div>`
+                    : '';
+
+                return `
+                    <div class="col">
+                        <div class="seller-card p-3">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <div class="min-w-0">
+                                    <h3 class="h6 fw-bold mb-0 text-truncate" title="${seller.name}">${seller.name}</h3>
+                                    ${phoneLine}
+                                    <div class="small text-muted mt-1">
+                                        <i class="bi bi-hash"></i>Rango ${padTicket(seller.rangeStart)} - ${padTicket(seller.rangeEnd)}
+                                        ${extraBadge}
+                                    </div>
+                                </div>
+                                <div class="text-end flex-shrink-0">
+                                    <div class="fw-bold text-dark">${formatMoney(stats.soldAmount)}</div>
+                                    <div class="small text-muted">${stats.sold} vendidos</div>
+                                </div>
+                            </div>
+
+                            <!-- Barra de progreso visual -->
+                            <div class="progress progress-slim mb-2" title="${pctPaid}% pagado">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: ${pctPaid}%"></div>
+                                <div class="progress-bar bg-danger" role="progressbar" style="width: ${pctPending}%"></div>
+                            </div>
+
+                            <!-- Badges de estado -->
+                            <div class="d-flex flex-wrap gap-1 mb-3">
+                                <span class="badge badge-paid rounded-pill px-2 py-1">
+                                    <i class="bi bi-check-circle-fill me-1"></i>${stats.paid} Pagadas
+                                </span>
+                                <span class="badge badge-pending rounded-pill px-2 py-1">
+                                    <i class="bi bi-exclamation-circle-fill me-1"></i>${stats.pending} Por pagar
+                                </span>
+                                ${stats.available > 0 ? `
+                                    <span class="badge badge-avail rounded-pill px-2 py-1">
+                                        ${stats.available} Disp.
+                                    </span>` : ''}
+                            </div>
+
+                            <!-- Botones de acción -->
+                            <div class="d-flex gap-2 mt-auto pt-2 border-top">
+                                <button type="button" class="btn btn-purple btn-sm flex-grow-1 fw-semibold rounded-3 py-2" onclick="openTicketsModal(${seller.id})">
+                                    <i class="bi bi-grid-3x3-gap-fill me-1"></i> Ver Tickets
+                                </button>
+                                <button type="button" class="btn btn-outline-purple btn-sm fw-semibold rounded-3 px-3 py-2" onclick="addExtraTicket(${seller.id})" title="Asignar 1 ticket correlativo extra">
+                                    <i class="bi bi-plus-lg"></i> Extra
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderFinances() {
+            const act = getActiveActivity();
+
+            let totalPaid = 0;
+            let totalPending = 0;
+            act.sellers.forEach(s => {
+                s.tickets.forEach(t => {
+                    if (t.status === 'paid') totalPaid++;
+                    else if (t.status === 'pending') totalPending++;
+                });
+            });
+
+            const paidIncome = totalPaid * act.price;
+            const pendingIncome = totalPending * act.price;
+            const totalExpenses = act.expenses.reduce((sum, e) => sum + e.amount, 0);
+            const netProfit = paidIncome - totalExpenses;
+            const projectedProfit = (paidIncome + pendingIncome) - totalExpenses;
+
+            document.getElementById('balPaidIncome').textContent = formatMoney(paidIncome);
+            document.getElementById('balPendingIncome').textContent = formatMoney(pendingIncome);
+            document.getElementById('balTotalExpenses').textContent = `- ${formatMoney(totalExpenses)}`;
+            document.getElementById('balNetProfit').textContent = formatMoney(netProfit);
+            document.getElementById('balPendingRef').textContent = formatMoney(pendingIncome);
+            document.getElementById('balProjectedProfit').textContent = formatMoney(projectedProfit);
+
+            document.getElementById('expensesCountBadge').textContent =
+                `${act.expenses.length} gasto${act.expenses.length === 1 ? '' : 's'}`;
+
+            const list = document.getElementById('expensesList');
+            if (act.expenses.length === 0) {
+                list.innerHTML = `<div class="text-center text-muted py-4 small">No hay gastos registrados en esta actividad.</div>`;
+                return;
+            }
+
+            list.innerHTML = act.expenses.map(exp => `
+                <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center gap-2">
+                    <div class="min-w-0">
+                        <div class="fw-semibold text-dark">${exp.description}</div>
+                        <div class="small text-muted">
+                            <i class="bi bi-calendar3 me-1"></i>${exp.date ? formatDateHuman(exp.date) : 'Sin fecha'}
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                        <span class="fw-bold text-danger">${formatMoney(exp.amount)}</span>
+                        <button type="button" class="btn btn-outline-danger btn-sm rounded-circle" onclick="deleteExpense(${exp.id})" title="Eliminar gasto">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openEditActivityModal() {
+            const act = getActiveActivity();
+            document.getElementById('eaName').value = act.name;
+            document.getElementById('eaOrgType').value = act.organizerType || 'Iglesia';
+            document.getElementById('eaOrgName').value = act.organizerName || '';
+            document.getElementById('eaPurpose').value = act.purpose || '';
+            document.getElementById('eaDate').value = act.date || '';
+            document.getElementById('eaPrice').value = act.price;
+            document.getElementById('eaPickupTime').value = act.pickupTime || '';
+            document.getElementById('eaPickupLocation').value = act.pickupLocation || '';
+            editActivityModalInstance.show();
+        }
+
+        /* =========================================================
+           MODAL DE CUADRÍCULA DE TICKETS Y ACCIONES
+           ========================================================= */
+        function openTicketsModal(sellerId) {
+            appState.selectedSellerId = sellerId;
+            const act = getActiveActivity();
+            const seller = act.sellers.find(s => s.id === sellerId);
+            if (!seller) return;
+
+            if (seller.tickets.length > 0) {
+                appState.selectedTicketNumber = seller.tickets[0].number;
+            }
+            renderTicketsModalContent();
+            ticketsModalInstance.show();
+        }
+
+        function renderTicketsModalContent() {
+            const act = getActiveActivity();
+            const seller = act.sellers.find(s => s.id === appState.selectedSellerId);
+            if (!seller) return;
+
+            const stats = getSellerStats(seller, act.price);
+            document.getElementById('tmSellerName').textContent = seller.name;
+            document.getElementById('tmSellerSummary').innerHTML =
+                `Vendidos: <strong>${stats.sold}</strong> (${formatMoney(stats.soldAmount)}) • ` +
+                `<span class="text-success fw-semibold">${stats.paid} pagados</span> • ` +
+                `<span class="text-danger fw-semibold">${stats.pending} pendientes</span>`;
+
+            document.getElementById('btnMarkAllPaid').disabled = stats.pending === 0;
+
+            const grid = document.getElementById('tmTicketGrid');
+            grid.innerHTML = seller.tickets.map(ticket => {
+                const isSelected = ticket.number === appState.selectedTicketNumber;
+                const statusClass = `status-${ticket.status}`;
+                const buyerDot = ticket.buyer && ticket.buyer.trim() !== ''
+                    ? `<span class="ticket-buyer-dot" title="Comprador: ${ticket.buyer}"></span>`
+                    : '';
+                const extraTag = ticket.isExtra ? `<span class="ticket-extra-tag">Extra</span>` : '';
+
+                return `
+                    <button type="button" class="ticket-btn ${statusClass} ${isSelected ? 'selected' : ''}" onclick="selectTicket(${ticket.number})">
+                        ${buyerDot}
+                        <span>#${padTicket(ticket.number)}</span>
+                        ${extraTag}
+                    </button>
+                `;
+            }).join('');
+
+            renderSelectedTicketPanel();
+        }
+
+        function selectTicket(ticketNumber) {
+            appState.selectedTicketNumber = ticketNumber;
+            renderTicketsModalContent();
+        }
+
+        function renderSelectedTicketPanel() {
+            const act = getActiveActivity();
+            const seller = act.sellers.find(s => s.id === appState.selectedSellerId);
+            if (!seller) return;
+            const ticket = seller.tickets.find(t => t.number === appState.selectedTicketNumber);
+            if (!ticket) return;
+
+            document.getElementById('selectedTicketLabel').textContent = `#${padTicket(ticket.number)}`;
+            document.getElementById('ticketBuyerInput').value = ticket.buyer || '';
+
+            const badge = document.getElementById('selectedTicketStatusBadge');
+            if (ticket.status === 'paid') {
+                badge.className = 'badge badge-paid rounded-pill px-3 py-1';
+                badge.textContent = 'Pagado';
+            } else if (ticket.status === 'pending') {
+                badge.className = 'badge badge-pending rounded-pill px-3 py-1';
+                badge.textContent = 'Pendiente';
+            } else {
+                badge.className = 'badge badge-avail rounded-pill px-3 py-1';
+                badge.textContent = 'Disponible';
+            }
+
+            document.getElementById('btnSetPaid').className =
+                `btn fw-semibold py-2 ${ticket.status === 'paid' ? 'btn-success' : 'btn-outline-success'}`;
+            document.getElementById('btnSetPending').className =
+                `btn fw-semibold py-2 ${ticket.status === 'pending' ? 'btn-danger' : 'btn-outline-danger'}`;
+            document.getElementById('btnSetAvailable').className =
+                `btn fw-semibold py-2 ${ticket.status === 'available' ? 'btn-secondary' : 'btn-outline-secondary'}`;
+        }
+
+        function updateSelectedTicketStatus(newStatus) {
+            const act = getActiveActivity();
+            const seller = act.sellers.find(s => s.id === appState.selectedSellerId);
+            if (!seller) return;
+            const ticket = seller.tickets.find(t => t.number === appState.selectedTicketNumber);
+            if (!ticket) return;
+
+            ticket.status = newStatus;
+            saveStateToStorage();
+            renderTicketsModalContent();
+            renderAll();
+        }
+
+        function addExtraTicket(sellerId, refreshModal = false) {
+            const act = getActiveActivity();
+            const seller = act.sellers.find(s => s.id === sellerId);
+            if (!seller) return;
+
+            const newNum = act.nextExtraNumber++;
+            seller.tickets.push({
+                number: newNum,
+                status: 'pending',
+                buyer: '',
+                isExtra: true
+            });
+
+            saveStateToStorage();
+            if (refreshModal) {
+                appState.selectedTicketNumber = newNum;
+                renderTicketsModalContent();
+            }
+            renderAll();
+            showToast(`Ticket extra #${padTicket(newNum)} asignado a ${seller.name}`);
+        }
+
+        /* =========================================================
+           TICKET DIGITAL (IMAGEN PNG Y WHATSAPP)
+           ========================================================= */
+        function openDigitalTicketModal() {
+            const act = getActiveActivity();
+            const seller = act.sellers.find(s => s.id === appState.selectedSellerId);
+            if (!seller) return;
+            const ticket = seller.tickets.find(t => t.number === appState.selectedTicketNumber);
+            if (!ticket) return;
+
+            const orgDisplay = act.organizerName && act.organizerName.trim() !== ''
+                ? `${act.organizerType}: ${act.organizerName}`
+                : act.organizerType;
+
+            document.getElementById('dtOrganizerLine').innerHTML =
+                `<i class="bi bi-hearts me-1"></i>${orgDisplay.toUpperCase()}`;
+            document.getElementById('dtActivityName').textContent = act.name.toUpperCase();
+            document.getElementById('dtPurpose').textContent = `Para: ${act.purpose || 'Actividad Pro-Fondos'}`;
+            document.getElementById('dtActivityDate').textContent = formatDateHuman(act.date);
+            document.getElementById('dtPickupTime').textContent = act.pickupTime || 'Por coordinar';
+            document.getElementById('dtTicketNumber').textContent = `N.º ${padTicket(ticket.number)}`;
+            document.getElementById('dtPrice').textContent = formatMoney(act.price);
+            document.getElementById('dtBuyerName').textContent =
+                ticket.buyer && ticket.buyer.trim() !== '' ? ticket.buyer.trim() : 'Portador';
+            document.getElementById('dtSellerName').textContent = seller.name;
+
+            const locBox = document.getElementById('dtLocationBox');
+            if (act.pickupLocation && act.pickupLocation.trim() !== '') {
+                locBox.classList.remove('d-none');
+                document.getElementById('dtPickupLocation').textContent = act.pickupLocation.trim();
+            } else {
+                locBox.classList.add('d-none');
+            }
+
+            const badge = document.getElementById('dtStatusBadge');
+            if (ticket.status === 'paid') {
+                badge.className = 'badge bg-success rounded-pill px-3 py-2';
+                badge.textContent = 'PAGADO';
+            } else if (ticket.status === 'pending') {
+                badge.className = 'badge bg-danger rounded-pill px-3 py-2';
+                badge.textContent = 'PENDIENTE';
+            } else {
+                badge.className = 'badge bg-secondary rounded-pill px-3 py-2';
+                badge.textContent = 'DISPONIBLE';
+            }
+
+            digitalTicketModalInstance.show();
+        }
+
+        async function generateTicketCanvas() {
+            const el = document.getElementById('printableTicket');
+            return await html2canvas(el, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true
+            });
+        }
+
+        async function downloadTicketPng() {
+            try {
+                const canvas = await generateTicketCanvas();
+                const link = document.createElement('a');
+                const act = getActiveActivity();
+                const ticketNum = padTicket(appState.selectedTicketNumber);
+                link.download = `Ticket_${act.name.replace(/\s+/g, '_')}_N${ticketNum}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showToast(`Imagen del ticket #${ticketNum} descargada`);
+            } catch (err) {
+                console.error(err);
+                showToast('No se pudo generar la imagen del ticket');
+            }
+        }
+
+        async function shareTicketWhatsapp() {
+            const act = getActiveActivity();
+            const seller = act.sellers.find(s => s.id === appState.selectedSellerId);
+            const ticket = seller ? seller.tickets.find(t => t.number === appState.selectedTicketNumber) : null;
+            if (!ticket) return;
+
+            const numStr = padTicket(ticket.number);
+            const buyerText = ticket.buyer && ticket.buyer.trim() ? `\n👤 Comprador: ${ticket.buyer.trim()}` : '';
+            const locText = act.pickupLocation && act.pickupLocation.trim() ? `\n📍 Lugar: ${act.pickupLocation.trim()}` : '';
+            const statusText = ticket.status === 'paid' ? 'PAGADO ✅' : (ticket.status === 'pending' ? 'PENDIENTE ⏳' : 'DISPONIBLE');
+            const shareMessage =
+                `🎟️ *${act.name.toUpperCase()}*\n` +
+                `🏛️ Organiza: ${act.organizerType} - ${act.organizerName}\n` +
+                `🎯 Para: ${act.purpose}\n` +
+                `🔢 Ticket: *N.º ${numStr}*\n` +
+                `💵 Precio: *${formatMoney(act.price)}*\n` +
+                `📅 Fecha: ${formatDateHuman(act.date)}\n` +
+                `⏰ Recojo: ${act.pickupTime}${locText}\n` +
+                `📌 Estado: ${statusText}${buyerText}\n` +
+                `🙏 ¡Muchas gracias por su colaboración!`;
+
+            // Intento 1: Web Share API con archivo PNG (Android / iOS)
+            try {
+                const canvas = await generateTicketCanvas();
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                const file = new File([blob], `Ticket_N${numStr}.png`, { type: 'image/png' });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        title: `Ticket N.º ${numStr} - ${act.name}`,
+                        text: shareMessage,
+                        files: [file]
+                    });
+                    return;
+                }
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+            }
+
+            // Respaldo: Descarga automática de la imagen PNG + aviso claro para enviar por WhatsApp
+            await downloadTicketPng();
+            showToast('Imagen descargada. Adjúntala en tu chat de WhatsApp.');
+            const waUrl = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`;
+            window.open(waUrl, '_blank');
+        }
+
+        /* =========================================================
+           COPIA DE SEGURIDAD (EXPORTAR / IMPORTAR JSON) Y CSV
+           ========================================================= */
+        function downloadBackupJson() {
+            const payload = {
+                app: 'Control de Actividades y Tickets',
+                version: 2,
+                exportedAt: new Date().toISOString(),
+                activeActivityId: appState.activeActivityId,
+                activities: appState.activities
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `respaldo_tickets_${getTodayIso()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showToast('Copia de seguridad (.json) descargada');
+        }
+
+        function handleRestoreBackupFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (!parsed || !Array.isArray(parsed.activities) || parsed.activities.length === 0) {
+                        showToast('El archivo no tiene un formato de respaldo válido');
+                        event.target.value = '';
+                        return;
+                    }
+                    // Validación básica de estructura de actividades
+                    const isValid = parsed.activities.every(a =>
+                        typeof a.name === 'string' && Array.isArray(a.sellers) && Array.isArray(a.expenses)
+                    );
+                    if (!isValid) {
+                        showToast('Archivo de respaldo incompleto o dañado');
+                        event.target.value = '';
+                        return;
+                    }
+
+                    appState.activities = parsed.activities;
+                    const exists = parsed.activities.some(a => a.id === parsed.activeActivityId);
+                    appState.activeActivityId = exists ? parsed.activeActivityId : parsed.activities[0].id;
+                    appState.filter = 'all';
+                    appState.searchQuery = '';
+                    document.getElementById('searchSellerInput').value = '';
+
+                    saveStateToStorage();
+                    renderAll();
+                    backupModalInstance.hide();
+                    showToast('¡Datos restaurados con éxito!');
+                } catch (err) {
+                    console.error(err);
+                    showToast('Error al leer el archivo JSON');
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function exportToCsv() {
+            const act = getActiveActivity();
+            const headers = ['N°', 'Nombres y Apellidos', 'Celular', 'Rango', 'Total Vendidos', 'Total Dinero (S/)', 'Pagadas', 'Por Pagar', 'Disponibles'];
+            const rows = [headers];
+
+            let grandSold = 0, grandAmount = 0, grandPaid = 0, grandPending = 0;
+
+            act.sellers.forEach((s, idx) => {
+                const st = getSellerStats(s, act.price);
+                grandSold += st.sold;
+                grandAmount += st.soldAmount;
+                grandPaid += st.paid;
+                grandPending += st.pending;
+
+                const rangeStr = `${s.rangeStart}-${s.rangeEnd}${st.extras > 0 ? ' (+' + st.extras + ' ext)' : ''}`;
+                rows.push([
+                    idx + 1,
+                    `"${s.name}"`,
+                    `"${s.phone || ''}"`,
+                    `"${rangeStr}"`,
+                    st.sold,
+                    st.soldAmount.toFixed(2),
+                    st.paid,
+                    st.pending,
+                    st.available
+                ]);
+            });
+
+            rows.push(['', '"TOTAL GENERAL"', '', '', grandSold, grandAmount.toFixed(2), grandPaid, grandPending, '']);
+
+            const csvContent = '\uFEFF' + rows.map(r => r.join(',')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Reporte_${act.name.replace(/\s+/g, '_')}_${act.date}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showToast('Reporte Excel (CSV) descargado');
+        }
+
+        function deleteExpense(expenseId) {
+            const act = getActiveActivity();
+            act.expenses = act.expenses.filter(e => e.id !== expenseId);
+            saveStateToStorage();
+            renderFinances();
+            showToast('Gasto eliminado');
+        }
+
+        function switchActivity(activityId) {
+            appState.activeActivityId = Number(activityId);
+            appState.filter = 'all';
+            appState.searchQuery = '';
+            document.getElementById('searchSellerInput').value = '';
+            document.querySelectorAll('.filter-pill').forEach(b => {
+                b.classList.toggle('active', b.dataset.filter === 'all');
+            });
+            saveStateToStorage(false);
+            renderAll();
+            showToast(`Actividad activa: ${getActiveActivity().name}`);
+        }
+
+        /* =========================================================
+           INICIALIZACIÓN Y EVENT LISTENERS
+           ========================================================= */
+        document.addEventListener('DOMContentLoaded', () => {
+            ticketsModalInstance = new bootstrap.Modal(document.getElementById('ticketsModal'));
+            digitalTicketModalInstance = new bootstrap.Modal(document.getElementById('digitalTicketModal'));
+            newSellerModalInstance = new bootstrap.Modal(document.getElementById('newSellerModal'));
+            newActivityModalInstance = new bootstrap.Modal(document.getElementById('newActivityModal'));
+            editActivityModalInstance = new bootstrap.Modal(document.getElementById('editActivityModal'));
+            backupModalInstance = new bootstrap.Modal(document.getElementById('backupModal'));
+            confirmModalInstance = new bootstrap.Modal(document.getElementById('confirmModal'));
+            appToastInstance = new bootstrap.Toast(document.getElementById('appToast'), { delay: 2600 });
+
+            // Cargar datos persistidos en localStorage
+            loadStateFromStorage();
+
+            // Fechas por defecto en formularios
+            document.getElementById('naDate').value = getTodayIso();
+            document.getElementById('expenseDate').value = getTodayIso();
+
+            // Selector de actividad en cabecera
+            document.getElementById('headerActivitySelect').addEventListener('change', e => {
+                switchActivity(e.target.value);
+            });
+
+            // Botón confirmar del modal genérico
+            document.getElementById('btnConfirmAction').addEventListener('click', () => {
+                confirmModalInstance.hide();
+                if (typeof pendingConfirmCallback === 'function') {
+                    const cb = pendingConfirmCallback;
+                    pendingConfirmCallback = null;
+                    cb();
+                }
+            });
+
+            // Abrir modal de Editar Actividad
+            document.getElementById('btnOpenEditActivity').addEventListener('click', openEditActivityModal);
+
+            // Guardar edición de la Actividad activa en vivo
+            document.getElementById('editActivityForm').addEventListener('submit', e => {
+                e.preventDefault();
+                const act = getActiveActivity();
+                const name = document.getElementById('eaName').value.trim();
+                const organizerType = document.getElementById('eaOrgType').value;
+                const organizerName = document.getElementById('eaOrgName').value.trim();
+                const purpose = document.getElementById('eaPurpose').value.trim();
+                const date = document.getElementById('eaDate').value;
+                const price = parseFloat(document.getElementById('eaPrice').value);
+                const pickupTime = document.getElementById('eaPickupTime').value.trim();
+                const pickupLocation = document.getElementById('eaPickupLocation').value.trim();
+
+                if (!name || !organizerName || !purpose || !date || isNaN(price) || price <= 0 || !pickupTime) return;
+
+                act.name = name;
+                act.organizerType = organizerType;
+                act.organizerName = organizerName;
+                act.purpose = purpose;
+                act.date = date;
+                act.price = price;
+                act.pickupTime = pickupTime;
+                act.pickupLocation = pickupLocation;
+
+                saveStateToStorage();
+                editActivityModalInstance.hide();
+                renderAll();
+                showToast('Datos de la actividad actualizados');
+            });
+
+            // Buscador en tiempo real (por nombre o número de ticket)
+            document.getElementById('searchSellerInput').addEventListener('input', e => {
+                appState.searchQuery = e.target.value;
+                renderSellersList();
+            });
+
+            // Filtros tipo píldora
+            document.querySelectorAll('.filter-pill').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    appState.filter = btn.dataset.filter;
+                    renderSellersList();
+                });
+            });
+
+            // Botones de cambio de estado dentro del Modal de Tickets
+            document.getElementById('btnSetPaid').addEventListener('click', () => updateSelectedTicketStatus('paid'));
+            document.getElementById('btnSetPending').addEventListener('click', () => updateSelectedTicketStatus('pending'));
+            document.getElementById('btnSetAvailable').addEventListener('click', () => updateSelectedTicketStatus('available'));
+
+            // Asignar extra desde el Modal de Tickets
+            document.getElementById('btnModalAddExtra').addEventListener('click', () => {
+                if (appState.selectedSellerId) {
+                    addExtraTicket(appState.selectedSellerId, true);
+                }
+            });
+
+            // Eliminar vendedor con confirmación
+            document.getElementById('btnRequestDeleteSeller').addEventListener('click', () => {
+                const act = getActiveActivity();
+                const seller = act.sellers.find(s => s.id === appState.selectedSellerId);
+                if (!seller) return;
+
+                askConfirmation(
+                    'Eliminar vendedor',
+                    `¿Deseas eliminar a "${seller.name}" y todos sus tickets asignados? Esta acción no se puede deshacer.`,
+                    () => {
+                        act.sellers = act.sellers.filter(s => s.id !== seller.id);
+                        saveStateToStorage();
+                        ticketsModalInstance.hide();
+                        renderAll();
+                        showToast(`Vendedor "${seller.name}" eliminado`);
+                    }
+                );
+            });
+
+            // Guardar nombre del comprador en tiempo real
+            document.getElementById('ticketBuyerInput').addEventListener('input', e => {
+                const act = getActiveActivity();
+                const seller = act.sellers.find(s => s.id === appState.selectedSellerId);
+                if (!seller) return;
+                const ticket = seller.tickets.find(t => t.number === appState.selectedTicketNumber);
+                if (ticket) {
+                    ticket.buyer = e.target.value;
+                    saveStateToStorage();
+                    const btns = document.querySelectorAll('#tmTicketGrid .ticket-btn.selected');
+                    if (btns.length > 0) {
+                        const existingDot = btns[0].querySelector('.ticket-buyer-dot');
+                        if (ticket.buyer.trim() !== '' && !existingDot) {
+                            const dot = document.createElement('span');
+                            dot.className = 'ticket-buyer-dot';
+                            btns[0].prepend(dot);
+                        } else if (ticket.buyer.trim() === '' && existingDot) {
+                            existingDot.remove();
+                        }
+                    }
+                }
+            });
+
+            // Liquidar todos los pendientes de un vendedor
+            document.getElementById('btnMarkAllPaid').addEventListener('click', () => {
+                const act = getActiveActivity();
+                const seller = act.sellers.find(s => s.id === appState.selectedSellerId);
+                if (!seller) return;
+
+                let count = 0;
+                seller.tickets.forEach(t => {
+                    if (t.status === 'pending') {
+                        t.status = 'paid';
+                        count++;
+                    }
+                });
+
+                if (count > 0) {
+                    saveStateToStorage();
+                    renderTicketsModalContent();
+                    renderAll();
+                    showToast(`${count} ticket${count > 1 ? 's' : ''} marcados como pagados`);
+                }
+            });
+
+            // Abrir modal de Ticket Digital
+            document.getElementById('btnOpenDigitalTicket').addEventListener('click', openDigitalTicketModal);
+
+            // Descargar PNG y Compartir WhatsApp
+            document.getElementById('btnDownloadTicketPng').addEventListener('click', downloadTicketPng);
+            document.getElementById('btnShareWhatsapp').addEventListener('click', shareTicketWhatsapp);
+
+            // Exportar CSV
+            document.getElementById('btnExportCsv').addEventListener('click', exportToCsv);
+
+            // Respaldo JSON: Descargar, Restaurar y Restablecer
+            document.getElementById('btnDownloadBackup').addEventListener('click', downloadBackupJson);
+            document.getElementById('backupFileInput').addEventListener('change', handleRestoreBackupFile);
+            document.getElementById('btnRequestResetDemo').addEventListener('click', () => {
+                askConfirmation(
+                    'Restablecer datos de ejemplo',
+                    'Se borrarán tus actividades actuales en este celular y se cargarán los datos de ejemplo iniciales.',
+                    () => {
+                        const defaults = getDefaultData();
+                        appState.activities = defaults.activities;
+                        appState.activeActivityId = defaults.activeActivityId;
+                        appState.filter = 'all';
+                        appState.searchQuery = '';
+                        document.getElementById('searchSellerInput').value = '';
+                        saveStateToStorage();
+                        backupModalInstance.hide();
+                        renderAll();
+                        showToast('Datos restablecidos al ejemplo inicial');
+                    }
+                );
+            });
+
+            // Sugerir rango automático al abrir modal de Nuevo Vendedor
+            document.getElementById('newSellerModal').addEventListener('show.bs.modal', () => {
+                const act = getActiveActivity();
+                const nextStart = act.nextExtraNumber;
+                document.getElementById('nsStart').value = nextStart;
+                document.getElementById('nsEnd').value = nextStart + 9;
+            });
+
+            // Guardar Nuevo Vendedor
+            document.getElementById('newSellerForm').addEventListener('submit', e => {
+                e.preventDefault();
+                const act = getActiveActivity();
+                const name = document.getElementById('nsName').value.trim();
+                const phone = document.getElementById('nsPhone').value.trim();
+                const start = parseInt(document.getElementById('nsStart').value, 10);
+                const end = parseInt(document.getElementById('nsEnd').value, 10);
+
+                if (!name || isNaN(start) || isNaN(end) || end < start) {
+                    showToast('Verifica que el rango de tickets sea válido');
+                    return;
+                }
+
+                const newSeller = {
+                    id: Date.now(),
+                    name,
+                    phone,
+                    rangeStart: start,
+                    rangeEnd: end,
+                    tickets: buildSellerTickets(start, end, [], 0, 0)
+                };
+
+                act.sellers.unshift(newSeller);
+                if (end >= act.nextExtraNumber) {
+                    act.nextExtraNumber = end + 1;
+                }
+
+                saveStateToStorage();
+                e.target.reset();
+                newSellerModalInstance.hide();
+                renderAll();
+                showToast(`Vendedor "${name}" agregado con tickets #${padTicket(start)} al #${padTicket(end)}`);
+            });
+
+            // Registrar Gasto
+            document.getElementById('expenseForm').addEventListener('submit', e => {
+                e.preventDefault();
+                const desc = document.getElementById('expenseDesc').value.trim();
+                const amount = parseFloat(document.getElementById('expenseAmount').value);
+                const date = document.getElementById('expenseDate').value || getTodayIso();
+                if (!desc || isNaN(amount) || amount <= 0) return;
+
+                const act = getActiveActivity();
+                act.expenses.unshift({
+                    id: Date.now(),
+                    description: desc,
+                    amount,
+                    date
+                });
+
+                saveStateToStorage();
+                e.target.reset();
+                document.getElementById('expenseDate').value = getTodayIso();
+                renderFinances();
+                showToast(`Gasto registrado: ${formatMoney(amount)}`);
+            });
+
+            // Crear Nueva Actividad
+            document.getElementById('newActivityForm').addEventListener('submit', e => {
+                e.preventDefault();
+                const name = document.getElementById('naName').value.trim();
+                const organizerType = document.getElementById('naOrgType').value;
+                const organizerName = document.getElementById('naOrgName').value.trim();
+                const purpose = document.getElementById('naPurpose').value.trim();
+                const date = document.getElementById('naDate').value;
+                const price = parseFloat(document.getElementById('naPrice').value);
+                const pickupTime = document.getElementById('naPickupTime').value.trim();
+                const pickupLocation = document.getElementById('naPickupLocation').value.trim();
+
+                if (!name || !organizerName || !purpose || !date || isNaN(price) || price <= 0 || !pickupTime) return;
+
+                const newAct = {
+                    id: Date.now(),
+                    name,
+                    organizerType,
+                    organizerName,
+                    purpose,
+                    date,
+                    pickupTime,
+                    pickupLocation,
+                    price,
+                    nextExtraNumber: 1,
+                    sellers: [],
+                    expenses: []
+                };
+
+                appState.activities.unshift(newAct);
+                appState.activeActivityId = newAct.id;
+                saveStateToStorage();
+                e.target.reset();
+                document.getElementById('naDate').value = getTodayIso();
+                document.getElementById('naPrice').value = 20;
+                newActivityModalInstance.hide();
+                renderAll();
+                showToast(`Actividad "${name}" creada y activada`);
+            });
+
+            // Render inicial
+            renderAll();
+        });
+    </script>
+</body>
+</html>
